@@ -1,3 +1,7 @@
+import pyautogui
+import time
+import keyboard
+
 def afk_Clicker():
     seconds_Wait = input("How many seconds do you want to have the program wait before starting")
     time.sleep(int(seconds_Wait))
