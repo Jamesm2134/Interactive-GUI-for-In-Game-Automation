@@ -1,0 +1,190 @@
+import tkinter as tk
+from tkinter import *
+from tkinter.ttk import *
+from tkinter import ttk
+import customtkinter
+from tkinter import Button
+import pyautogui
+import time
+import keyboard
+
+
+customtkinter.set_appearance_mode("dark")
+customtkinter.set_default_color_theme("green")
+program_canceled = False
+start_clicking = False
+auto_clicker_code = False
+auto_clicker_walk_code = False
+auto_attack_code = False
+program_stopped = False
+
+
+def on_select(event):
+    selected_item = cmb.get(cmb.curselection())
+    num.set(selected_item)
+    cmb.place_forget()
+
+
+def countDown():
+    for i in range(10, -1, -1):
+        yield i
+
+
+def countUp():
+    i = 1
+    while True:
+        yield i
+        i += 1
+
+def start_countdown():
+    global program_stopped
+    global start_clicking
+    countDown()
+    countdown_generator = countDown() 
+    for value in countdown_generator:
+        count_down_label.config(text=f"Starting in {value} seconds")
+        if program_stopped is True:
+            return
+        if value == 0:
+            timer_done = True
+            start_clicking = True
+        root.update()  
+        root.after(500)  
+        
+    
+    if timer_done:
+        clicking_begin()
+        
+
+
+def start_countUp():
+    seconds_clicking.pack(padx=20, pady=20)
+    back_to_main.pack()
+    countUp_generator = countUp()  # Initialize countUp_generator here
+    for value in countUp_generator:
+        seconds_clicking.config(text=f"{value} Seconds clicking")
+        root.update()  # Update the GUI to reflect the new label text
+        root.after(1000)  # Delay for 1 second (1000 milliseconds)
+    
+  
+root = customtkinter.CTk()
+root.iconbitmap('C:\\Users\\jamck\Downloads\\finalmclogo.ico')
+background_image = PhotoImage(file='C:\\Users\\jamck\Desktop\\ezgif-2-2298842797.gif')
+background_label = Label(root, image=background_image)
+background_label.place(x=-10, y=-10)
+root.geometry("500x500")
+root.title("SimpleClicker")
+root.resizable(False, False)
+frame = customtkinter.CTkFrame(master=root)
+frame.pack(pady=20, padx=60, fill="both", expand=True)
+label = customtkinter.CTkLabel(master=frame, text="Simple  Clicker", font=("Minecraft Ten",45,"bold"))
+label.pack()
+program_created = customtkinter.CTkLabel(master=frame, text="A (simple) program created for Minecraft", font=("Botsmatic Outline", 10))
+program_created.pack()
+
+
+
+
+num = tk.StringVar()
+cmb = ttk.Combobox(frame, width=18, textvariable=num, state="readonly", exportselection=False, )
+cmb['values'] = ("Auto Clicker", "Auto Clicker Moving", "AFK Attacking")
+cmb.pack()
+cmb.bind("<<ComboboxSelected>>", lambda e: frame.focus())
+cmb.bind("<<ComboboxSelected>>", lambda _ : start_button.pack(padx=20, pady=20))
+
+
+def abort():
+    global program_stopped
+    program_stopped = True
+    print("aborted")
+    start_button.configure(state='enabled')
+    cmb.config(state='enabled')
+    abort_button.pack_forget()
+    #root.update()
+    count_down_label.pack_forget()
+
+
+def back_to_main_site():
+    seconds_clicking.pack_forget()
+    back_to_main.pack_forget()
+    abort_button.pack_forget()
+    cmb.pack()
+    cmb.config(state='enabled')
+    start_button.configure(state='enabled')
+    
+
+afk_auto_click = False
+
+def start_button_clicked():
+    global program_stopped
+    global afk_auto_click
+    program_stopped = False
+    print("started")
+    start_button.configure(state='disabled')
+    cmb.config(state='disabled')
+    abort_button.pack(pady=5)
+    count_down_label.pack()
+    start_countdown()
+    afk_auto_click = True
+
+
+def clicking_begin():
+    cmb.pack_forget()
+    abort_button.pack_forget()
+    count_down_label.pack_forget()
+    start_button.pack_forget()
+    afk_commands()
+    start_countUp()
+
+
+def exit_program():
+   root.destroy()
+   root.quit()
+
+
+count_down_label = tk.Label(frame, text="Countdown: ")
+start_button = customtkinter.CTkButton(master=frame, text="Start Auto Clicker", command=start_button_clicked)
+start_button.pack()
+start_button.pack_forget()
+abort_button = customtkinter.CTkButton(master=frame, text=" Click to ABORT ", command=abort)
+abort_button.pack()
+abort_button.pack_forget()   
+seconds_clicking = tk.Label(frame, text=" seconds clicking  " )
+Button(root, text= "                   Exit                   ", font=("Calibri",14,"bold"), command=exit_program).pack(pady=20)
+back_to_main = customtkinter.CTkButton(master=frame, text="  STOP  ", command=back_to_main_site)
+back_to_main.pack()
+back_to_main.pack_forget()
+
+
+def option_selected(event):
+    global auto_clicker_code
+    global auto_clicker_walk_code
+    global auto_attack_code
+    
+    selected_item = cmb.get()
+    auto_clicker_code = False
+    auto_clicker_walk_code = False
+    auto_attack_code = False  # Reset all variables to False initially
+    
+    if selected_item == "Auto Clicker":
+        auto_clicker_code = True
+    elif selected_item == "Auto Clicker Moving":
+        auto_clicker_walk_code = True
+    elif selected_item == "AFK Attacking":
+        auto_attack_code = True
+        
+
+def afk_commands():
+    global auto_attack_code
+    #afk attacking / enderman farm
+
+    while auto_attack_code:
+        pyautogui.click(button='left')
+        time.sleep(0.63)
+
+        if keyboard.is_pressed('esc'):
+            print("done")
+            break
+    
+
+root.mainloop()
