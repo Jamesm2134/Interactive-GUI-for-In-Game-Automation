@@ -7,6 +7,7 @@ from tkinter import Button
 import pyautogui
 import time
 import keyboard
+import threading
 
 
 customtkinter.set_appearance_mode("dark")
@@ -17,9 +18,11 @@ auto_clicker_code = False
 auto_clicker_walk_code = False
 auto_attack_code = False
 program_stopped = False
+background_running = False
 
 
 def on_select(event):
+    
     selected_item = cmb.get(cmb.curselection())
     num.set(selected_item)
     cmb.place_forget()
@@ -39,6 +42,7 @@ def countUp():
 def start_countdown():
     global program_stopped
     global start_clicking
+    global auto_clicker_code, auto_clicker_walk_code, auto_attack_code, background_running
     countDown()
     countdown_generator = countDown() 
     for value in countdown_generator:
@@ -58,6 +62,7 @@ def start_countdown():
 
 
 def start_countUp():
+    global auto_clicker_code, auto_clicker_walk_code, auto_attack_code, background_running
     seconds_clicking.pack(padx=20, pady=20)
     back_to_main.pack()
     countUp_generator = countUp()  # Initialize countUp_generator here
@@ -83,29 +88,56 @@ program_created = customtkinter.CTkLabel(master=frame, text="A (simple) program 
 program_created.pack()
 
 
+def combo_box_selection_changed(event):
+    global auto_clicker_code, auto_clicker_walk_code, auto_attack_code, background_running
+    selected_item = cmb.get()
+    if selected_item == "Auto Clicker":
+        auto_clicker_code = True
+        print("test")
+    elif selected_item == "Auto Clicker Moving":
+        auto_clicker_walk_code = True
+    elif selected_item == "AFK Attacking":
+        auto_attack_code = True
 
+    frame.focus()
+    start_button.pack(padx=20, pady=20)
+
+
+def start_background():
+    global background_running
+    if not background_running:
+        background_running = True
+        background_thread = threading.Thread(target=afk_commands_background)
+        background_thread.daemon = True
+        background_thread.start()
+        time.sleep(0.01)
+
+def stop_background():
+    global background_running
+    background_running = False
 
 num = tk.StringVar()
 cmb = ttk.Combobox(frame, width=18, textvariable=num, state="readonly", exportselection=False, )
 cmb['values'] = ("Auto Clicker", "Auto Clicker Moving", "AFK Attacking")
 cmb.pack()
-cmb.bind("<<ComboboxSelected>>", lambda e: frame.focus())
-cmb.bind("<<ComboboxSelected>>", lambda _ : start_button.pack(padx=20, pady=20))
+cmb.bind("<<ComboboxSelected>>", combo_box_selection_changed)
 
 
 def abort():
-    global program_stopped
+    global auto_clicker_code, auto_clicker_walk_code, auto_attack_code, program_stopped
     program_stopped = True
+    stop_background()
     print("aborted")
     start_button.configure(state='enabled')
     cmb.config(state='enabled')
     abort_button.pack_forget()
-    #root.update()
     count_down_label.pack_forget()
 
 
 def back_to_main_site():
+    global auto_clicker_code, auto_clicker_walk_code, auto_attack_code
     seconds_clicking.pack_forget()
+    stop_clicking.pack_forget()
     back_to_main.pack_forget()
     abort_button.pack_forget()
     cmb.pack()
@@ -116,6 +148,7 @@ def back_to_main_site():
 afk_auto_click = False
 
 def start_button_clicked():
+    global auto_clicker_code, auto_clicker_walk_code, auto_attack_code
     global program_stopped
     global afk_auto_click
     program_stopped = False
@@ -129,12 +162,17 @@ def start_button_clicked():
 
 
 def clicking_begin():
+    global auto_clicker_code, auto_clicker_walk_code, auto_attack_code
     cmb.pack_forget()
     abort_button.pack_forget()
     count_down_label.pack_forget()
     start_button.pack_forget()
-    afk_commands()
+    stop_clicking.pack()
+    start_background()
     start_countUp()
+    
+
+    
 
 
 def exit_program():
@@ -154,37 +192,27 @@ Button(root, text= "                   Exit                   ", font=("Calibri"
 back_to_main = customtkinter.CTkButton(master=frame, text="  STOP  ", command=back_to_main_site)
 back_to_main.pack()
 back_to_main.pack_forget()
+stop_clicking = tk.Label(frame, text="To stop press ( x )")
 
 
-def option_selected(event):
-    global auto_clicker_code
-    global auto_clicker_walk_code
-    global auto_attack_code
-    
-    selected_item = cmb.get()
-    auto_clicker_code = False
-    auto_clicker_walk_code = False
-    auto_attack_code = False  # Reset all variables to False initially
-    
-    if selected_item == "Auto Clicker":
-        auto_clicker_code = True
-    elif selected_item == "Auto Clicker Moving":
-        auto_clicker_walk_code = True
-    elif selected_item == "AFK Attacking":
-        auto_attack_code = True
-        
 
-def afk_commands():
-    global auto_attack_code
-    #afk attacking / enderman farm
+def afk_commands_background():
+    global auto_clicker_code, program_stopped
+    print("hello wolring")
+    while True:  # Keep the loop running until explicitly stopped
+        if auto_clicker_code and not program_stopped:
+            while True:
+                pyautogui.keyDown('w')
+                pyautogui.keyDown('shiftleft')
+                pyautogui.mouseDown(button='left')
 
-    while auto_attack_code:
-        pyautogui.click(button='left')
-        time.sleep(0.63)
-
-        if keyboard.is_pressed('esc'):
-            print("done")
-            break
-    
+                if keyboard.is_pressed('x'):
+                    print("program over")
+                    pyautogui.keyUp('w')
+                    pyautogui.keyUp('shiftleft')
+                    pyautogui.mouseUp(button='left')
+                    abort()
+                    back_to_main_site()              
+                    break
 
 root.mainloop()
